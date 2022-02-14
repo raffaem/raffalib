@@ -49,6 +49,14 @@ def log_exception():
     for s in traceback.format_tb(tb):
         logging.error(s.strip())
 
+
+def change_console_loglevel(newlevel):
+    logger = logging.getLogger()
+    for handler in logger.handlers:
+        if isinstance(handler, type(logging.StreamHandler())):
+            handler.setLevel(newlevel)
+
+
 def init_logging(log_to_file=True, file_path=None,
                 file_prefix="", file_append=False,
                 file_loglevel=logging.DEBUG,
@@ -91,4 +99,4 @@ class NumpyJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         else:
-            return super(MyEncoder, self).default(obj)
+            return super(NumpyJSONEncoder, self).default(obj)
