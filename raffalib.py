@@ -18,7 +18,12 @@ def sortcols(df):
     return df[natsorted(cols)]
 
 def send_email(smtp_host, smtp_port, user, password, from_email, to_email, subject, message):
-    s = smtplib.SMTP_SSL(host=smtp_host, port=smtp_port)
+    try:
+        s = smtplib.SMTP_SSL(host=smtp_host, port=smtp_port)
+    except Exception as e:
+        logging.error("[send_email] Failed to send e-mail: exception in SMTP_SSL")
+        logging.error(e)
+        return
     s.ehlo()
     s.login(user, password)
 
