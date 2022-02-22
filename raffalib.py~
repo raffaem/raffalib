@@ -76,16 +76,7 @@ def init_logging(log_to_file=True,
     logging.getLogger().handlers.clear()
 
     # Set DEBUG level on root logger
-    # This is essential to have Jupyter Lab
-    # print INFO-level messages to the console
-    # we will set the log level on a 
-    # per-handler basis afterwards
     logging.getLogger().setLevel(logging.DEBUG)
-
-    # Redirect the warnings.warn() called by pybliometrics
-    # when a Scopus ID was merged
-    # to the logging system
-    logging.captureWarnings(True)
 
     # Log to file
     if log_to_file:
