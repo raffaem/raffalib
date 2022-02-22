@@ -62,27 +62,31 @@ def change_console_loglevel(newlevel):
             handler.setLevel(newlevel)
 
 
-def init_logging(log_to_file=True, file_path=None,
-                file_prefix="", file_append=False,
+def init_logging(log_to_file=True, 
+                file_path=None,
+                file_prefix="", 
+                file_append=False,
                 file_loglevel=logging.DEBUG,
-                log_to_console=True, console_loglevel=logging.INFO):
+                log_to_console=True,
+                console_loglevel=logging.INFO):
+
     """Set up logging to file and console."""
 
     # Log to file
     if log_to_file:
         if not file_path:
-            os.makedirs("./logs", exist_ok=True)
+            os.makedirs(os.path.join(".", "logs"), exist_ok=True)
             filename = file_prefix + datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")+".log"
             file_path = os.path.join(".", "logs", filename)
         if file_append:
-            filemode_val = 'a'
+            filemode = 'a'
         else:
-            filemode_val = 'w'
-        logging.basicConfig(level=file_loglevel,
-                            format="%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s",
-                            # datefmt='%m-%d %H:%M',
-                            filename=file_path,
-                            filemode=filemode_val)
+            filemode = 'w'
+        file = logging.FileHandler(filename=file_path, mode=filemode, encoding="utf8")
+        file.setLevel(file_loglevel)
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s")
+        file.setFormatter(formatter)
+        logging.getLogger.addHandler(file)
 
     # Log to console
     if log_to_console:
