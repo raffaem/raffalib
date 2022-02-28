@@ -87,6 +87,18 @@ def init_logging(log_to_file=True,
     # to the logging system
     logging.captureWarnings(True)
 
+    # Log to console
+    if log_to_console:
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler(stream=sys.stdout)
+        console.setLevel(console_loglevel)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter("%(asctime)s %(message)s")
+        console.setFormatter(formatter)
+        # add the handler to the root logger
+        logging.getLogger().addHandler(console)
+        logging.info(f"Logging to console at level {loglevel2str(console_loglevel)}")
+
     # Log to file
     if log_to_file:
         if not file_path:
@@ -102,17 +114,22 @@ def init_logging(log_to_file=True,
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s")
         file.setFormatter(formatter)
         logging.getLogger().addHandler(file)
+        logging.info(f"Logging to file {file_path} at level {loglevel2str(file_loglevel)}")
 
-    # Log to console
-    if log_to_console:
-        # define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler(stream=sys.stdout)
-        console.setLevel(console_loglevel)
-        # set a format which is simpler for console use
-        formatter = logging.Formatter("%(asctime)s %(message)s")
-        console.setFormatter(formatter)
-        # add the handler to the root logger
-        logging.getLogger().addHandler(console)
+def loglevel2str(level):
+    if level==0:
+        return "NOTSET"
+    elif level==10:
+        return "DEBUG"
+    elif level==20:
+        return "INFO"
+    elif level==30:
+        return "WARNING"
+    elif level==40:
+        return "ERROR"
+    elif level==50:
+        return "CRITICAL"
+    raise Exception(f"Unrecognized level {level}")
 
 class NumpyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
