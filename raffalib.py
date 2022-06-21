@@ -65,13 +65,16 @@ def change_console_loglevel(newlevel):
 def init_logging(module_name,
                 log_to_file=True, 
                 file_path=None,
-                file_prefix=module_name, 
+                file_prefix=None, 
                 file_append=False,
                 file_loglevel=logging.DEBUG,
                 log_to_console=True,
                 console_loglevel=logging.INFO):
 
     """Set up logging to file and console."""
+
+    if not file_prefix:
+        file_prefix = module_name
 
     # Remove previous handlers
     logging.getLogger().handlers.clear()
