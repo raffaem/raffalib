@@ -62,9 +62,10 @@ def change_console_loglevel(newlevel):
             handler.setLevel(newlevel)
 
 
-def init_logging(log_to_file=True, 
+def init_logging(module_name,
+                log_to_file=True, 
                 file_path=None,
-                file_prefix="", 
+                file_prefix=module_name, 
                 file_append=False,
                 file_loglevel=logging.DEBUG,
                 log_to_console=True,
@@ -80,12 +81,16 @@ def init_logging(log_to_file=True,
     # print INFO-level messages to the console
     # we will set the log level on a 
     # per-handler basis afterwards
-    logging.getLogger().setLevel(logging.DEBUG)
+    #logging.getLogger().setLevel(logging.DEBUG)
 
     # Redirect the warnings.warn() called by pybliometrics
     # when a Scopus ID was merged
     # to the logging system
     logging.captureWarnings(True)
+
+    # get logger for our module
+    logger = logging.getLogger(module_name)
+    logger.setLevel(logging.DEBUG)
 
     # Log to console
     if log_to_console:
@@ -96,8 +101,7 @@ def init_logging(log_to_file=True,
         formatter = logging.Formatter("%(asctime)s %(message)s")
         console.setFormatter(formatter)
         # add the handler to the root logger
-        logging.getLogger().addHandler(console)
-        logging.info(f"Logging to console at level {loglevel2str(console_loglevel)}")
+        logger.addHandler(console)
 
     # Log to file
     if log_to_file:
@@ -113,8 +117,9 @@ def init_logging(log_to_file=True,
         file.setLevel(file_loglevel)
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s")
         file.setFormatter(formatter)
-        logging.getLogger().addHandler(file)
-        logging.info(f"Logging to file {file_path} at level {loglevel2str(file_loglevel)}")
+        logger.addHandler(file)
+        
+    return logger
 
 def loglevel2str(level):
     if level==0:
