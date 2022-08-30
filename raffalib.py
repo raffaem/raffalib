@@ -134,7 +134,7 @@ def init_logging(
         console.setLevel(console_loglevel)
         # set a format which is simpler for console use
         formatter = MultiLineFormatter(
-            fmt="%(asctime)s %(levelname)-8s %(message)s",
+            fmt="%(asctime)s %(levelname)s %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
         console.setFormatter(formatter)
