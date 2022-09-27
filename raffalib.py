@@ -14,6 +14,14 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
+def ini_db_litestream(con):
+    cur = con.cursor()
+    cur.execute("PRAGMA busy_timeout = 5000;")
+    cur.execute("PRAGMA journal_mode=WAL;")
+    cur.execute("PRAGMA synchronous = NORMAL;")
+    cur.execute("PRAGMA wal_autocheckpoint = 0;")
+
+
 def sortcols(df):
     cols = list(df.columns)
     return df[natsorted(cols)]
