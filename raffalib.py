@@ -17,12 +17,17 @@ from email.mime.text import MIMEText
 def ini_db_litestream(con):
     cur = con.cursor()
     cur.execute("PRAGMA busy_timeout = 5000;")
-    cur.execute("PRAGMA journal_mode=WAL;")
-    cur.execute("PRAGMA synchronous = NORMAL;")
-    cur.execute("PRAGMA wal_autocheckpoint = 0;")
+    #cur.execute("PRAGMA journal_mode=WAL;")
+    # commit before turning synchronous to normal
+    # otherwise sqlite3 fails with
+    # OperationalError: Safety level may not be changed inside a transaction
+    #con.commit()
+    #cur.execute("PRAGMA synchronous = NORMAL;")
+    #cur.execute("PRAGMA wal_autocheckpoint = 0;")
+    con.commit()
 
 
-def sortcols(df):
+def sortcols(df:pd.DataFrame) -> pd.DataFrame:
     cols = list(df.columns)
     return df[natsorted(cols)]
 
@@ -154,9 +159,8 @@ def init_logging(
         if not file_dir:
             file_dir = os.path.join(".", "logs")
         os.makedirs(file_dir, exist_ok=True)
-        file_name = (
-            file_prefix + datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S") + ".log"
-        )
+        dt = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S") 
+        file_name = file_prefix + "_" + dt + ".log"
         file_path = os.path.join(file_dir, file_name)
         if file_append:
             file_mode = "a"
