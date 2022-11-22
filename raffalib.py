@@ -125,11 +125,8 @@ def init_logging(
     if not file_prefix:
         file_prefix = module_name
 
-    # Remove previous handlers
+    # Remove old handlers from root logger
     logging.getLogger().handlers.clear()
-    t = logging.getLogger(module_name)
-    if t:
-        t.handlers.clear()
 
     # Redirect the warnings.warn() called by pybliometrics
     # when a Scopus ID was merged
@@ -138,6 +135,8 @@ def init_logging(
 
     # get logger for our module
     logger = logging.getLogger(module_name)
+    # Remove old handlers
+    logger.handlers.clear()
     # Prevents Jupyter Lab to display output two times
     # see: https://stackoverflow.com/questions/31403679/python-logging-module-duplicated-console-output-ipython-notebook-qtconsole
     logger.propagate = False
