@@ -127,6 +127,9 @@ def init_logging(
 
     # Remove previous handlers
     logging.getLogger().handlers.clear()
+    t = logging.getLogger(module_name)
+    if t:
+        t.handlers.clear()
 
     # Redirect the warnings.warn() called by pybliometrics
     # when a Scopus ID was merged
