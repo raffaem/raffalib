@@ -17,19 +17,14 @@ from email.mime.text import MIMEText
 def ini_db_litestream(con):
     cur = con.cursor()
     cur.execute("PRAGMA busy_timeout = 5000;")
-    #cur.execute("PRAGMA journal_mode=WAL;")
+    # cur.execute("PRAGMA journal_mode=WAL;")
     # commit before turning synchronous to normal
     # otherwise sqlite3 fails with
     # OperationalError: Safety level may not be changed inside a transaction
-    #con.commit()
-    #cur.execute("PRAGMA synchronous = NORMAL;")
-    #cur.execute("PRAGMA wal_autocheckpoint = 0;")
+    # con.commit()
+    # cur.execute("PRAGMA synchronous = NORMAL;")
+    # cur.execute("PRAGMA wal_autocheckpoint = 0;")
     con.commit()
-
-
-def sortcols(df:pd.DataFrame) -> pd.DataFrame:
-    cols = list(df.columns)
-    return df[natsorted(cols)]
 
 
 def send_email(
@@ -110,7 +105,7 @@ class MultiLineFormatter(logging.Formatter):
 
 
 def init_logging(
-    module_name,
+    module_name=None,
     log_to_file=True,
     file_dir=None,
     file_prefix=None,
@@ -119,11 +114,13 @@ def init_logging(
     log_to_console=True,
     console_loglevel=logging.INFO,
 ):
-
     """Set up logging to file and console."""
 
     if not file_prefix:
-        file_prefix = module_name
+        if module_name:
+            file_prefix = module_name
+        else:
+            file_prefix = "main"
 
     # Remove old handlers from root logger
     logging.getLogger().handlers.clear()
@@ -133,7 +130,7 @@ def init_logging(
     # to the logging system
     logging.captureWarnings(True)
 
-    # get logger for our module
+    # Get logger for our module
     logger = logging.getLogger(module_name)
     # Remove old handlers
     logger.handlers.clear()
@@ -161,7 +158,7 @@ def init_logging(
         if not file_dir:
             file_dir = os.path.join(".", "logs")
         os.makedirs(file_dir, exist_ok=True)
-        dt = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S") 
+        dt = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
         file_name = file_prefix + "_" + dt + ".log"
         file_path = os.path.join(file_dir, file_name)
         if file_append:
