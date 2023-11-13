@@ -7,6 +7,7 @@ import sys
 import os
 import datetime
 import pathlib
+import traceback
 
 from .MultiLineFormatter import MultiLineFormatter
 
