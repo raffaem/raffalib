@@ -3,126 +3,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import logging
-import json
+import sys
 import os
 import datetime
-import sys
-import traceback
-import pandas as pd
-from natsort import natsorted
-from pathlib import Path
-import importlib
+import pathlib
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from .MultiLineFormatter import MultiLineFormatter
 
-
-class ObjDebug(object):
-    """
-    Class to automatically reload module when it changes.
-    See: https://stackoverflow.com/a/77307755/1719931
-    """
-    def __getattribute__(self,k):
-        ga=object.__getattribute__
-        sa=object.__setattr__
-        cls=ga(self,'__class__')
-        modname=cls.__module__
-        mod=__import__(modname)
-        importlib.reload(mod)
-        sa(self,'__class__',getattr(mod,cls.__name__))
-        return ga(self,k)
-
-
-def load_module(file_name, module_name):
-    """
-    Function to source a Python file
-    See: https://stackoverflow.com/a/67208147/1719931
-    See: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
-    """
-    import importlib.util
-    import sys
-    spec = importlib.util.spec_from_file_location(module_name, file_name)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-def ini_db_litestream(con):
-    cur = con.cursor()
-    cur.execute("PRAGMA busy_timeout = 5000;")
-    # cur.execute("PRAGMA journal_mode=WAL;")
-    # commit before turning synchronous to normal
-    # otherwise sqlite3 fails with
-    # OperationalError: Safety level may not be changed inside a transaction
-    # con.commit()
-    # cur.execute("PRAGMA synchronous = NORMAL;")
-    # cur.execute("PRAGMA wal_autocheckpoint = 0;")
-    con.commit()
-
-
-def send_email(
-    smtp_host, smtp_port, user, password, from_email, to_email, subject, message
-):
-    try:
-        s = smtplib.SMTP_SSL(host=smtp_host, port=smtp_port)
-    except Exception as e:
-        logging.error("[send_email] Failed to send e-mail: exception in SMTP_SSL")
-        logging.error(e)
-        return
-    s.ehlo()
-    s.login(user, password)
-
-    msg = MIMEMultipart()  # create a message
-
-    # setup the parameters of the message
-    msg["From"] = from_email
-    msg["To"] = to_email
-    msg["Subject"] = subject
-
-    # add in the message body
-    msg.attach(MIMEText(message, "plain"))
-    # msg.attach(MIMEText(message, 'html'))
-
-    # send the message via the server set up earlier.
-    try:
-        s.send_message(msg)
-    except:
-        return False
-    return True
-
-
-class MultiLineFormatter(logging.Formatter):
-    """
-    Multi-line formatter for MyLogger's handlers (but console handler and file handler).
-    See: https://stackoverflow.com/questions/58590731/how-to-indent-multiline-message-printed-by-python-logger
-    """
-
-    def get_header_length(self, record):
-        """Get the header length of a given record."""
-        return len(
-            super().format(
-                logging.LogRecord(
-                    name=record.name,
-                    level=record.levelno,
-                    pathname=record.pathname,
-                    lineno=record.lineno,
-                    msg="",
-                    args=(),
-                    exc_info=None,
-                )
-            )
-        )
-
-    def format(self, record):
-        """Format a record with added indentation."""
-        indent = " " * self.get_header_length(record)
-        head, *trailing = super().format(record).splitlines(True)
-        return head + "".join(indent + line for line in trailing)
-
-
-class MyLogger:
+class RaffaLogger:
 
     def __init__(self,
                  logger_name=None,
@@ -180,8 +68,8 @@ class MyLogger:
             dt = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
             file_name = file_prefix + "_" + dt + ".log"
             if type(file_dir) == str:
-                file_dir = Path(file_dir)
-            file_path = Path(file_dir/file_name)
+                file_dir = pathlib.Path(file_dir)
+            file_path = pathlib.Path(file_dir/file_name)
             if file_append:
                 file_mode = "a"
             else:

@@ -4,10 +4,8 @@
 
 import time
 import logging
-import raffalib
 from typing import Optional
 from pathlib import Path
-import EWebBrowser
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -16,11 +14,13 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException, UnexpectedAlertPresentException, NoSuchElementException
 from selenium.webdriver.support.select import Select
 
+from raffalib.ObjDebug import ObjDebug
+from .EWebBrowser import EWebBrowser
 
-class RaffaWebScraper(raffalib.ObjDebug):
+class RaffaWebScraper(ObjDebug):
     
     def __init__(self,
-                 browser_app:EWebBrowser.EWebBrowser=EWebBrowser.EWebBrowser.FIREFOX,
+                 browser_app:EWebBrowser=EWebBrowser.FIREFOX,
                  headless_browser:bool=False,
                  geckodriver_path:Optional[Path]=None,
                  chromedriver_path:Optional[Path]=None,
@@ -33,7 +33,7 @@ class RaffaWebScraper(raffalib.ObjDebug):
         #logging.info(f"EWebBrowser.FIREFOX={EWebBrowser.FIREFOX} ({type(EWebBrowser.FIREFOX)})  ({EWebBrowser.FIREFOX.name})  ({EWebBrowser.FIREFOX.value}) ({browser_app == EWebBrowser.FIREFOX})")
         #logging.info(f"EWebBrowser.CHROME={EWebBrowser.CHROME} ({type(EWebBrowser.CHROME)}) ({EWebBrowser.CHROME.value}) ({browser_app == EWebBrowser.CHROME})")
 
-        if browser_app == EWebBrowser.EWebBrowser.FIREFOX:
+        if browser_app == EWebBrowser.FIREFOX:
             logging.info("Initializing Firefox browser")
             options = webdriver.FirefoxOptions()
             if download_path:
@@ -47,7 +47,7 @@ class RaffaWebScraper(raffalib.ObjDebug):
                 options.add_argument('--headless')
             service = webdriver.FirefoxService(executable_path=geckodriver_path, log_path=log_path)
             self.browser = webdriver.Firefox(options=options, service=service)
-        elif browser_app == EWebBrowser.EWebBrowser.CHROME:
+        elif browser_app == EWebBrowser.CHROME:
             logging.info("Initializing Chrome browser")
             options = webdriver.ChromeOptions()
             if headless_browser:
