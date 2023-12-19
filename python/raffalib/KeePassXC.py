@@ -18,7 +18,7 @@ class RaffaKeePassXC:
     This class creates a KeePassXC association and store it in an encrypted file
     """
 
-    def __init__(self, kpxcencfp, newgpg=None):
+    def __init__(self, kpxcencfp, newgpg=None, passphrase=None):
     
         if not newgpg:
             self.gpg = python_gnupg.GPG()
@@ -60,9 +60,9 @@ class RaffaKeePassXC:
                 fh.write(outenc.data)
         else:
             logging.debug("Reading existing KeePassXC association from file")
-            with open(kpxcencfp, "rb") as fh:
-                outenc = fh.read()
-            outdd = self.gpg.decrypt(outenc)
+            fh = open(kpxcencfp, "rb")
+            outdd = self.gpg.decrypt_file(fh, passphrase=passphrase)
+            fh.close()
             if not outdd.ok:
                 msg = f"Failed to decrypt file '{kpxcencfp}'\n"
                 msg += f"Content='{outenc}'\n"

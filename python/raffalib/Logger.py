@@ -11,17 +11,18 @@ import traceback
 
 from .MultiLineFormatter import MultiLineFormatter
 
-class RaffaLogger:
+class Logger:
 
     def __init__(self,
                  logger_name=None,
-                 log_to_file=True,
+                 log_to_file=False,
                  file_dir=None,
                  file_prefix=None,
                  file_append=False,
                  file_loglevel=logging.DEBUG,
                  log_to_console=True,
                  console_loglevel=logging.INFO,
+                 print_logger_name=False
                 ):
         """Set up logging to file and console."""
 
@@ -53,8 +54,12 @@ class RaffaLogger:
             console = logging.StreamHandler(stream=sys.stdout)
             console.setLevel(console_loglevel)
             # set a format which is simpler for console use
+            fmt = "%(asctime)s "
+            if print_logger_name:
+                fmt += "%(name)s "
+            fmt += "%(levelname)s %(message)s"
             formatter = MultiLineFormatter(
-                fmt="%(asctime)s %(levelname)s %(message)s",
+                fmt=fmt,
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
             console.setFormatter(formatter)
@@ -113,7 +118,6 @@ class RaffaLogger:
         for s in traceback.format_tb(tb):
             self.logger.error(s.strip())
 
-
     def change_console_loglevel(self, newlevel):
         for handler in self.logger.handlers:
             if isinstance(handler, type(logging.StreamHandler())):
@@ -123,3 +127,17 @@ class RaffaLogger:
         for handler in self.logger.handlers:
             if isinstance(handler, type(logging.FileHandler())):
                 handler.setLevel(newlevel)
+
+    def debug(self, s):
+        self.logger.debug(s)
+
+    def info(self, s):
+        self.logger.info(s)
+
+    def warning(self, s):
+        self.logger.warning(s)
+
+    def error(self, s):
+        self.logger.error(s)
+
+

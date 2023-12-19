@@ -6,6 +6,7 @@ import time
 import logging
 from typing import Optional
 from pathlib import Path
+import base64
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -13,25 +14,22 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException, UnexpectedAlertPresentException, NoSuchElementException
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.common.print_page_options import PrintOptions
 
-from raffalib.ObjDebug import ObjDebug
 from .EWebBrowser import EWebBrowser
 
-class RaffaWebScraper(ObjDebug):
+class RaffaWebScraper():
     
     def __init__(self,
                  browser_app:EWebBrowser=EWebBrowser.FIREFOX,
                  headless_browser:bool=False,
                  geckodriver_path:Optional[Path]=None,
+                 firefox_profile_path:Optional[Path]=None,
                  chromedriver_path:Optional[Path]=None,
                  log_path:Optional[Path]=None,
                  download_path:Optional[Path]=None):
 
         self.browser = None
-
-        #logging.info(f"browser_app={browser_app} ({type(browser_app)}) ({browser_app.name}) ({browser_app.value})")
-        #logging.info(f"EWebBrowser.FIREFOX={EWebBrowser.FIREFOX} ({type(EWebBrowser.FIREFOX)})  ({EWebBrowser.FIREFOX.name})  ({EWebBrowser.FIREFOX.value}) ({browser_app == EWebBrowser.FIREFOX})")
-        #logging.info(f"EWebBrowser.CHROME={EWebBrowser.CHROME} ({type(EWebBrowser.CHROME)}) ({EWebBrowser.CHROME.value}) ({browser_app == EWebBrowser.CHROME})")
 
         if browser_app == EWebBrowser.FIREFOX:
             logging.info("Initializing Firefox browser")
@@ -45,6 +43,8 @@ class RaffaWebScraper(ObjDebug):
                 #options.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/x-gzip")
             if headless_browser:
                 options.add_argument('--headless')
+            if firefox_profile_path:
+                options.profile = webdriver.FirefoxProfile(firefox_profile_path)
             service = webdriver.FirefoxService(executable_path=geckodriver_path, log_path=log_path)
             self.browser = webdriver.Firefox(options=options, service=service)
         elif browser_app == EWebBrowser.CHROME:
@@ -259,7 +259,7 @@ class RaffaWebScraper(ObjDebug):
         locator = (By.XPATH, xpath)
         return self.wait_popup(locator, timeout_appear, timeout_disappear, fail_if_not_appear)
     
-    # PAGE INTERACTION
+    # PAGE SCROLL
 
     def scroll_by(self, value):
         self.browser.execute_script(f"window.scrollBy(0,{value})")
@@ -334,3 +334,24 @@ class RaffaWebScraper(ObjDebug):
     def insert_in_textarea_xpath(self, xpath, text, timeout_visibility=20):
         locator = (By.XPATH, xpath)
         return self.insert_in_textarea(locator, text, timeout_visibility)
+
+    # WINDOW INTERACTION
+
+    def get_active_tab(self) -> None:
+        cwd = self.browser.current_window_handle
+        return self.browser.window_handles.find(cwd)
+
+    def get_tabs_count(self) -> None:
+        return len(self.browser.window_handles)
+
+    def goto_tab(self, tab_index:int) -> None:
+        self.browser.switch_to.window(self.browser.window_handles[tab_index])
+
+    def print_to(self, filepath:Path, page_width:float, page_height:float) -> None:
+        print_options = PrintOptions()
+        print_options.page_width = page_width
+        print_options.page_height = page_height
+        pdf = self.browser.print_page(print_options=print_options)
+        pdf_bytes = base64.b64decode(pdf)
+        with open(filepath, "wb") as fh:
+            fh.write(pdf_bytes)

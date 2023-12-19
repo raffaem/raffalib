@@ -15,6 +15,7 @@ import importlib
 import smtplib
 import email
 
+
 def source(file_name, module_name):
     """
     Function to source a Python file
@@ -28,19 +29,6 @@ def source(file_name, module_name):
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
-
-
-def ini_db_litestream(con):
-    cur = con.cursor()
-    cur.execute("PRAGMA busy_timeout = 5000;")
-    # cur.execute("PRAGMA journal_mode=WAL;")
-    # commit before turning synchronous to normal
-    # otherwise sqlite3 fails with
-    # OperationalError: Safety level may not be changed inside a transaction
-    # con.commit()
-    # cur.execute("PRAGMA synchronous = NORMAL;")
-    # cur.execute("PRAGMA wal_autocheckpoint = 0;")
-    con.commit()
 
 
 def send_email(smtp_host,
