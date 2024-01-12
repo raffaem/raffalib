@@ -17,10 +17,10 @@ chwd2curr(fnc, verbose = TRUE, fatal = FALSE)
 None
 }
 \description{
-Change the current working directory 
+Change the current working directory
 to the directory in which the script we are running resides.
 }
 \examples{
-chwd2curr(function(){})
+chwd2curr(function() {})
 
 }

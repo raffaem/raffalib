@@ -6,10 +6,14 @@ import datetime
 import hashlib
 import random
 import time
+from pathlib import Path
+import logging
 
 from dataclasses import dataclass
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 from geopy.geocoders import Nominatim
+
+from .SQLiteDB import SQLiteDB
 
 @dataclass
 class GeoCodingID():
@@ -17,10 +21,12 @@ class GeoCodingID():
     downloaded:bool
 
 class GeoCodingDB(SQLiteDB):
+
     def _new_geolocator(self):
         if self.user_agent is None:
             unix_time = datetime.datetime.now().timestamp()
-            user_agent = hashlib.md5(str(unix_time).encode("utf8")).hexdigest()
+            self.user_agent = hashlib.md5(str(unix_time).encode("utf8")).hexdigest()
+        logging.info(f"Creating new geolocator with user_agent={self.user_agent}")
         self.geolocator = Nominatim(user_agent=self.user_agent)
 
     def __init__(self, fp: Path, user_agent: str = None):
@@ -62,11 +68,12 @@ class GeoCodingDB(SQLiteDB):
             if attempt <= max_attempts:
                 sleep_time = random.uniform(*sleep_range)
                 logging.info(
-                    f"Caught exception. Sleeping  for {sleep_time:.2f} seconds then retrying"
+                    f"Caught exception. Sleeping for {sleep_time:.2f} seconds then retrying"
                 )
                 time.sleep(sleep_time)
                 self._new_geolocator()
-                return self.do_geocode(
+                logging.info("Retrying")
+                return self._do_geocode(
                     address,
                     attempt=attempt + 1,
                     max_attempts=max_attempts,

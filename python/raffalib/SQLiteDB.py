@@ -5,6 +5,8 @@
 import sqlite3
 from pathlib import Path
 from typing import Any, Optional
+import logging
+import json
 
 class SQLiteDB:
 
@@ -70,8 +72,7 @@ class SQLiteDB:
                     table:str,
                     data:dict[str,Any],
                     crs:Optional[str]=None) -> sqlite3.Cursor:
-        if crs:
-            assert(crs in ["ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"])
+        assert(crs in [None, "ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"])
         col_names = ",".join(list(data.keys()))
         col_phs = [":"+x for x in list(data.keys())]
         col_phs = ",".join(col_phs)
@@ -83,18 +84,38 @@ class SQLiteDB:
     def insert_into_many(self,
                          table:str,
                          data:list[dict[str,Any]],
-                         crs:Optional[str]=None) -> sqlite3.Cursor:
-        if crs:
-            assert(crs in ["ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"])
+                         crs:Optional[str]=None,
+                         debug:bool=False,
+                         default_keys:dict[str,Any]=dict()) -> sqlite3.Cursor:
+        assert(crs in [None, "ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"])
+        # Insert default keys
+        for i in range(0,len(data)):
+            for defkey in default_keys:
+                if defkey not in data[i].keys():
+                    data[i][defkey] = default_keys[defkey]
+        # Get keys and check
         keys = set(data[0].keys())
-        for d in data[1:]:
-           assert(set(d.keys())==keys)
+        for i,d in enumerate(data[1:]):
+            if set(d.keys()) != keys:
+                a = set(d.keys()) - keys
+                b = keys - set(d.keys())
+                msg =  f"data[{i}] miss keys '{a}'\n"
+                msg += f"data[0] miss keys '{b}'\n"
+                self.logger.error(msg)
+                raise Exception("Passed a list of dicts with different keys from each other")
         col_names = ",".join(keys)
         col_phs = [":"+x for x in keys]
         col_phs = ",".join(col_phs)
-        or_statement = ("OR " + crs) if crs else ""
-        query = f"INSERT {or_statement} INTO {table} ({col_names}) VALUES ({col_phs});"
-        return self.con.cursor().executemany(query, data)
+        or_statement = ("OR " + crs + " ") if crs else ""
+        query = f"INSERT {or_statement}INTO {table} ({col_names}) VALUES ({col_phs});"
+        if not debug:
+            return self.con.cursor().executemany(query, data)
+        logging.info("\ninsert_into_many debugging")
+        logging.info(f"query={query}")
+        for datum in data:
+            logging.info(f"datum={datum}")
+            self.con.cursor().execute(query, datum)
+        return
 
 
     def get_tables(self) -> list[str]:
@@ -107,7 +128,7 @@ class SQLiteDB:
             type ='table' AND
             name NOT LIKE 'sqlite_%';
         """
-        rows = orbisdb.con.cursor().execute(query).fetchall()
+        rows = self.con.cursor().execute(query).fetchall()
         tables = [row["name"] for row in rows]
         return tables
 
@@ -133,3 +154,7 @@ class SQLiteDB:
             query += "IF EXISTS"
         query += f" {table_name}"
         self.con.cursor().execute(query)
+
+    def drop_all_tables(self):
+        for table in self.get_tables():
+            self.drop_table(table)

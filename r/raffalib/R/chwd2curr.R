@@ -1,64 +1,76 @@
 #!/usr/bin/env R
 
+#' Open dataframe with LibreOffice
+#' @export
+loi <- function(df, head = NULL) {
+  outfp <- "/tmp/rdf.csv"
+  if (!is.null(head)) {
+    df <- df %>% dplyr::head(head)
+  }
+  readr::write_csv(df, outfp)
+  system(paste0("libreoffice ", outfp))
+  file.unlink(outfp)
+}
+
+
 #' CWD to current file's dir
 #'
-#' Change the current working directory 
+#' Change the current working directory
 #' to the directory in which the script we are running resides.
 #'
 #' @param fnc A function that takes no argument and returns nothing (\code{function(){}})
 #' @param verbose Whether to print debug messages
 #' @param fatal Whether to call stop() if we can't get the directory of the currently running script
-#' 
+#'
 #' @importFrom utils getSrcDirectory
-#' 
+#'
 #' @return None
 #'
 #' @examples
-#' chwd2curr(function(){})
+#' chwd2curr(function() {})
 #'
 #' @export
-chwd2curr <- function(fnc, verbose=TRUE, fatal=FALSE) {
+chwd2curr <- function(fnc, verbose = TRUE, fatal = FALSE) {
   requireNamespace("rstudioapi")
-	# Change WD to current file
-	# - source and knit
+  # Change WD to current file
+  # - source and knit
   srcdirl <- utils::getSrcDirectory(fnc)
-  if (length(srcdirl)>0) {
+  if (length(srcdirl) > 0) {
     srcdir <- srcdirl[1]
-    if(srcdir == "") {
+    if (srcdir == "") {
       srcdir <- NULL
     }
-  }
-  else {
+  } else {
     srcdir <- NULL
   }
-	if ( is.null(srcdir) ) {
-	  if(verbose) {
-	    print("Using rstudioapi")
-	  }
-	  srcdir <- tryCatch({
-	      cont <- rstudioapi::getActiveDocumentContext()
-	      srcdir <- dirname(cont$path)
-	    },
-	    error=function(cond){
-	      NULL
-	  })
-	}
-  else if(verbose) {
-      print("Using utils::getSrcDirectory")
-  }
-  
-  if(is.null(srcdir)) {
-    if(fatal) {
-      stop("Cannot get current working directory")
+  if (is.null(srcdir)) {
+    if (verbose) {
+      print("Using rstudioapi")
     }
-    else if(verbose) {
+    srcdir <- tryCatch(
+      {
+        cont <- rstudioapi::getActiveDocumentContext()
+        srcdir <- dirname(cont$path)
+      },
+      error = function(cond) {
+        NULL
+      }
+    )
+  } else if (verbose) {
+    print("Using utils::getSrcDirectory")
+  }
+
+  if (is.null(srcdir)) {
+    if (fatal) {
+      stop("Cannot get current working directory")
+    } else if (verbose) {
       print("Cannot get current working directory")
     }
     return()
   }
-  
-	setwd(srcdir)
-	if(verbose) {
-	  print(paste0("Working directory changed to: ", srcdir)) 
-	}
+
+  setwd(srcdir)
+  if (verbose) {
+    print(paste0("Working directory changed to: ", srcdir))
+  }
 }

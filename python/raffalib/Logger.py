@@ -9,7 +9,33 @@ import datetime
 import pathlib
 import traceback
 
-from .MultiLineFormatter import MultiLineFormatter
+class MultiLineFormatter(logging.Formatter):
+    """
+    Multi-line formatter for MyLogger's handlers (but console handler and file handler).
+    See: https://stackoverflow.com/questions/58590731/how-to-indent-multiline-message-printed-by-python-logger
+    """
+
+    def get_header_length(self, record):
+        """Get the header length of a given record."""
+        return len(
+            super().format(
+                logging.LogRecord(
+                    name=record.name,
+                    level=record.levelno,
+                    pathname=record.pathname,
+                    lineno=record.lineno,
+                    msg="",
+                    args=(),
+                    exc_info=None,
+                )
+            )
+        )
+
+    def format(self, record):
+        """Format a record with added indentation."""
+        indent = " " * self.get_header_length(record)
+        head, *trailing = super().format(record).splitlines(True)
+        return head + "".join(indent + line for line in trailing)
 
 class Logger:
 
@@ -97,14 +123,18 @@ class Logger:
         self.logger.info("Started")
         self.logger.info(f"Python executable: {sys.executable}")
         self.logger.info(f"Python version: {sys.version}")
+
+        msg = f"Console handler: {log_to_console}"
         if log_to_console:
-            self.logger.info(f"Console handler: {log_to_console}, " \
-                        f"level {logging.getLevelName(console_loglevel)}")
+            msg += f", level: {logging.getLevelName(console_loglevel)}"
+        self.logger.info(msg)
+
+        msg = f"File handler: {log_to_file}"
         if log_to_file:
-            self.logger.info(f"File handler: {log_to_file}, " \
-                        f"level {logging.getLevelName(file_loglevel)}, " \
-                        f"filename '{file_path.resolve()}', " \
-                        f"mode {file_mode}")
+            msg += f", level {logging.getLevelName(file_loglevel)}, " \
+                   f"filename '{file_path.resolve()}', " \
+                   f"mode {file_mode}"
+        self.logger.info(msg)
 
     def log_exception(self):
         """
