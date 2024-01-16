@@ -20,7 +20,7 @@ df2dt <- function(df,
                   truncate_max_title = 200,
                   types_in_colnames = TRUE,
                   filter = "top",
-                  to_round = NULL,
+                  to_round = "auto",
                   to_round_digits = 2) {
   # Build column names string for display
   # Substitute "_" with spaces to allow long column names to return to new lines
@@ -86,6 +86,18 @@ df2dt <- function(df,
     l[[col]] <- "NA"
   }
   df <- df %>% tidyr::replace_na(l)
+  # Compute rows to round automatically
+  if (length(to_round) == 1 && to_round == "auto") {
+    to_round <- c()
+    for (col in colnames(df)) {
+      if (class(df[[col]])[1] == "numeric") {
+        to_round <- c(to_round, col)
+      }
+    }
+  }
+  cat("to_round=")
+  print(paste0(to_round, collapse = ";"))
+  cat("\n")
   # Get column index to truncate for DT::datatable
   to_truncate_ix <- which(colnames(df) %in% to_truncate)
   # Generate DT table
@@ -113,8 +125,6 @@ df2dt <- function(df,
     )
   )
   # Round number columns
-  for (col in to_round) {
-    dtobj <- dtobj %>% DT::formatRound(col, to_round_digits)
-  }
+  dtobj <- dtobj %>% DT::formatRound(to_round, to_round_digits)
   return(dtobj)
 }

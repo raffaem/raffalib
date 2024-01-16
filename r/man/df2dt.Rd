@@ -11,7 +11,7 @@ df2dt(
   truncate_max_title = 200,
   types_in_colnames = TRUE,
   filter = "top",
-  to_round = NULL,
+  to_round = "auto",
   to_round_digits = 2
 )
 }
