@@ -6,8 +6,8 @@
 \usage{
 df2dt(
   df,
-  to_truncate = NULL,
-  truncate_max = 10,
+  to_truncate = "auto",
+  truncate_max = 20,
   truncate_max_title = 200,
   types_in_colnames = TRUE,
   filter = "top",

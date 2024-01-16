@@ -15,38 +15,79 @@
 #'
 #' @export
 df2dt <- function(df,
-                   to_truncate = NULL,
-                   truncate_max = 10,
-                   truncate_max_title = 200,
-                   types_in_colnames = TRUE,
-                   filter = "top",
-                   to_round = NULL,
-                   to_round_digits = 2) {
-  # column names to display
+                  to_truncate = "auto",
+                  truncate_max = 20,
+                  truncate_max_title = 200,
+                  types_in_colnames = TRUE,
+                  filter = "top",
+                  to_round = NULL,
+                  to_round_digits = 2) {
+  # Build column names string for display
+  # Substitute "_" with spaces to allow long column names to return to new lines
   newcolnames <- colnames(df)
   for (i in seq(1, length(newcolnames))) {
     newcolnames[i] <- stringr::str_replace_all(newcolnames[i], "_", " ")
   }
+  # Insert data type in column names
   if (types_in_colnames) {
     for (i in seq(1, length(colnames(df)))) {
       col <- colnames(df)[i]
       newcolnames[i] <- paste0(
         newcolnames[i],
         "\n{",
-        class(df[[col]]),
+        class(df[[col]])[1],
         "}"
       )
     }
   }
+  # Find in an automatic way which string columns
+  # we need to truncate
+  if (length(to_truncate) == 1 && to_truncate == "auto") {
+    to_truncate <- c()
+    for (col in colnames(df)) {
+      if (class(df[[col]])[1] != "character") {
+        next
+      }
+      # For a logical vector,
+      # which.min returns the index of the first FALSE
+      # as FALSE < TRUE
+      ix <- which.min(is.na(df[[col]]))
+      x <- df[[col]][ix]
+      if (is.na(x)) {
+        # The column is made entirely of NAs
+        next
+      }
+      strl <- stringr::str_length(x)
+      if (strl > truncate_max) {
+        to_truncate <- c(to_truncate, col)
+      }
+    }
+  }
+  # Make sure all columns to truncate are of "character" class
+  to_truncate_2 <- c()
+  for (col in to_truncate) {
+    if (class(df[[col]]) == "character") {
+      to_truncate_2 <- c(to_truncate_2, col)
+    } else {
+      # print(paste0("Column ", col, " removed
+      #          from columns to truncate
+      #          because it isn't of character class"))
+    }
+  }
+  to_truncate <- to_truncate_2
+  cat("to_truncate=")
+  print(paste0(to_truncate, collapse = ";"))
+  cat("\n")
   # We need to replace NA values with a character value
   # for columns we are going to truncate,
   # otherwise DT crashes and show an empty table
-  to_truncate_ix <- which(colnames(df) %in% to_truncate)
   l <- list()
-  for (el in to_truncate) {
-    l[[el]] <- "NA"
+  for (col in to_truncate) {
+    l[[col]] <- "NA"
   }
   df <- df %>% tidyr::replace_na(l)
+  # Get column index to truncate for DT::datatable
+  to_truncate_ix <- which(colnames(df) %in% to_truncate)
   # Generate DT table
   dtobj <- DT::datatable(df,
     colnames = newcolnames,
@@ -77,4 +118,3 @@ df2dt <- function(df,
   }
   return(dtobj)
 }
-
