@@ -2,16 +2,27 @@
 
 #' Open dataframe with LibreOffice
 #' @export
+gmi <- function(df, head = NULL) {
+  outfp <- "/tmp/rdf.csv"
+  if (!is.null(head)) {
+    df <- df %>% head(head)
+  }
+  readr::write_csv(df, outfp)
+  system(paste0("gnumeric ", outfp))
+  file.remove(outfp)
+}
+
+#' Open dataframe with LibreOffice
+#' @export
 loi <- function(df, head = NULL) {
   outfp <- "/tmp/rdf.csv"
   if (!is.null(head)) {
-    df <- df %>% dplyr::head(head)
+    df <- df %>% head(head)
   }
   readr::write_csv(df, outfp)
   system(paste0("libreoffice ", outfp))
-  file.unlink(outfp)
+  file.remove(outfp)
 }
-
 
 #' CWD to current file's dir
 #'
@@ -74,3 +85,4 @@ chwd2curr <- function(fnc, verbose = TRUE, fatal = FALSE) {
     print(paste0("Working directory changed to: ", srcdir))
   }
 }
+
