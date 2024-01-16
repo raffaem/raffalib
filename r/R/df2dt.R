@@ -11,6 +11,8 @@
 #'
 #' @return a DT::datatable
 #'
+#' @importFrom magrittr %>%
+#'
 #' @export
 df2dt <- function(df,
                    to_truncate = NULL,
@@ -44,7 +46,7 @@ df2dt <- function(df,
   for (el in to_truncate) {
     l[[el]] <- "NA"
   }
-  df %<>% tidyr::replace_na(l)
+  df <- df %>% tidyr::replace_na(l)
   # Generate DT table
   dtobj <- DT::datatable(df,
     colnames = newcolnames,
@@ -71,7 +73,7 @@ df2dt <- function(df,
   )
   # Round number columns
   for (col in to_round) {
-    dtobj %<>% DT::formatRound(col, to_round_digits)
+    dtobj <- dtobj %>% DT::formatRound(col, to_round_digits)
   }
   return(dtobj)
 }

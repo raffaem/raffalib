@@ -6,7 +6,7 @@
 #' @export
 dtss <- function(dt) {
   ui <- shiny::fluidPage(
-    shiny::titlePanel("Edgar Anderson's Iris Data"),
+    # shiny::titlePanel("Edgar Anderson's Iris Data"),
     DT::dataTableOutput("dt")
   )
 
