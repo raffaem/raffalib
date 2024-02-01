@@ -2,15 +2,16 @@
 # Copyright 2023 Raffaele Mancuso
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import logging
 import sqlite3
 from pathlib import Path
 from typing import Any, Optional
-import logging
-import json
+
 
 class SQLiteDB:
-
-    def __init__(self, dbfp:Path|str, commit_on_close:bool=False) -> None:
+    def __init__(
+        self, dbfp: Path | str, commit_on_close: bool = False
+    ) -> None:
         self.commit_on_close = commit_on_close
         self.dbfp = Path(dbfp)
         self.dbfp.parent.mkdir(parents=True, exist_ok=True)
@@ -52,59 +53,61 @@ class SQLiteDB:
         self.con.commit()
 
     def get_foreign_keys(self) -> bool:
-        foreign_keys = int(self.cur.execute("PRAGMA foreign_keys;").fetchone()["foreign_keys"])
-        assert(foreign_keys in [0,1])
+        foreign_keys = int(
+            self.cur.execute("PRAGMA foreign_keys;").fetchone()["foreign_keys"]
+        )
+        assert foreign_keys in [0, 1]
         return foreign_keys == 1
 
-    def set_foreign_keys(self, fk:bool) -> None:
+    def set_foreign_keys(self, fk: bool) -> None:
         fks = "ON" if fk else "OFF"
         self.cur.execute(f"PRAGMA foreign_keys = {fks};")
-        assert(self.get_foreign_keys()==fk)
+        assert self.get_foreign_keys() == fk
 
-
-    def get_max_id(self, table:str, col:str="id") -> int:
-        #self.logger.warning("Using get_max_id. Are you sure?")
+    def get_max_id(self, table: str, col: str = "id") -> int:
+        # self.logger.warning("Using get_max_id. Are you sure?")
         query = f"SELECT MAX({col}) AS max_id FROM {table}"
         return self.con.cursor().execute(query).fetchone()["max_id"]
 
-
-    def insert_into(self,
-                    table:str,
-                    data:dict[str,Any],
-                    crs:Optional[str]=None) -> sqlite3.Cursor:
-        assert(crs in [None, "ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"])
+    def insert_into(
+        self, table: str, data: dict[str, Any], crs: Optional[str] = None
+    ) -> sqlite3.Cursor:
+        assert crs in [None, "ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"]
         col_names = ",".join(list(data.keys()))
-        col_phs = [":"+x for x in list(data.keys())]
+        col_phs = [":" + x for x in list(data.keys())]
         col_phs = ",".join(col_phs)
         or_statement = ("OR " + crs) if crs else ""
         query = f"INSERT {or_statement} INTO {table} ({col_names}) VALUES ({col_phs});"
         return self.con.cursor().execute(query, data)
 
-
-    def insert_into_many(self,
-                         table:str,
-                         data:list[dict[str,Any]],
-                         crs:Optional[str]=None,
-                         debug:bool=False,
-                         default_keys:dict[str,Any]=dict()) -> sqlite3.Cursor:
-        assert(crs in [None, "ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"])
+    def insert_into_many(
+        self,
+        table: str,
+        data: list[dict[str, Any]],
+        crs: Optional[str] = None,
+        debug: bool = False,
+        default_keys: dict[str, Any] = dict(),
+    ) -> sqlite3.Cursor:
+        assert crs in [None, "ROLLBACK", "ABORT", "FAIL", "IGNORE", "REPLACE"]
         # Insert default keys
-        for i in range(0,len(data)):
+        for i in range(0, len(data)):
             for defkey in default_keys:
                 if defkey not in data[i].keys():
                     data[i][defkey] = default_keys[defkey]
         # Get keys and check
         keys = set(data[0].keys())
-        for i,d in enumerate(data[1:]):
+        for i, d in enumerate(data[1:]):
             if set(d.keys()) != keys:
                 a = set(d.keys()) - keys
                 b = keys - set(d.keys())
-                msg =  f"data[{i}] miss keys '{a}'\n"
+                msg = f"data[{i}] miss keys '{a}'\n"
                 msg += f"data[0] miss keys '{b}'\n"
                 self.logger.error(msg)
-                raise Exception("Passed a list of dicts with different keys from each other")
+                raise Exception(
+                    "Passed a list of dicts with different keys from each other"
+                )
         col_names = ",".join(keys)
-        col_phs = [":"+x for x in keys]
+        col_phs = [":" + x for x in keys]
         col_phs = ",".join(col_phs)
         or_statement = ("OR " + crs + " ") if crs else ""
         query = f"INSERT {or_statement}INTO {table} ({col_names}) VALUES ({col_phs});"
@@ -116,7 +119,6 @@ class SQLiteDB:
             logging.info(f"datum={datum}")
             self.con.cursor().execute(query, datum)
         return
-
 
     def get_tables(self) -> list[str]:
         query = """
@@ -132,7 +134,7 @@ class SQLiteDB:
         tables = [row["name"] for row in rows]
         return tables
 
-    def get_columns(self, table:str) -> list[str]:
+    def get_columns(self, table: str) -> list[str]:
         query = f"""
         SELECT sql FROM sqlite_master
         WHERE tbl_name = '{table}' AND type = 'table'
@@ -142,14 +144,14 @@ class SQLiteDB:
         row = dict(row)
         pos = row["sql"].find("(")
         pos2 = row["sql"].find(")")
-        cols = row["sql"][pos+1:pos2].split(",")
-        cols = [col.replace("\t"," ") for col in cols]
+        cols = row["sql"][pos + 1 : pos2].split(",")
+        cols = [col.replace("\t", " ") for col in cols]
         cols = [col.strip().split(" ")[0] for col in cols]
-        cols = [col.replace("\"","").replace("'","") for col in cols]
+        cols = [col.replace('"', "").replace("'", "") for col in cols]
         return cols
 
     def drop_table(self, table_name, fail_if_not_exists=False) -> None:
-        query = f"DROP TABLE "
+        query = "DROP TABLE "
         if not fail_if_not_exists:
             query += "IF EXISTS"
         query += f" {table_name}"
