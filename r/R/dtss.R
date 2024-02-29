@@ -1,4 +1,3 @@
-
 #' Open a shiny server for server-side DT::datatable visualization
 #'
 #' @param dt DT::Table
@@ -10,7 +9,10 @@ dtss <- function(dt) {
     DT::dataTableOutput("dt")
   )
 
-  server <- function(input, output) {
+  server <- function(input, output, session) {
+    session$onSessionEnded(function() {
+      shiny::stopApp()
+    })
     output$dt <- DT::renderDT({
       dt
     })
