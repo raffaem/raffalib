@@ -12,7 +12,9 @@ df2dt(
   types_in_colnames = TRUE,
   filter = "top",
   to_round = "auto",
-  to_round_digits = 2
+  to_round_digits = 2,
+  fixed_header = TRUE,
+  page_length = 20
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ df2dt(
 \item{to_round}{A character vector with numeric colum names that have to be rounded}
 
 \item{to_round_digits}{Maximum number of digits for rounded columns}
+
+\item{fixed_header}{Whether the header row should be fixed when scrolling}
+
+\item{page_length}{Number of rows per page}
 }
 \value{
 a DT::datatable

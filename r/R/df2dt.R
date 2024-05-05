@@ -8,6 +8,8 @@
 #' @param filter Position of the filter widgets
 #' @param to_round A character vector with numeric colum names that have to be rounded
 #' @param to_round_digits Maximum number of digits for rounded columns
+#' @param fixed_header Whether the header row should be fixed when scrolling
+#' @param page_length Number of rows per page
 #'
 #' @return a DT::datatable
 #'
@@ -21,7 +23,14 @@ df2dt <- function(df,
                   types_in_colnames = TRUE,
                   filter = "top",
                   to_round = "auto",
-                  to_round_digits = 2) {
+                  to_round_digits = 2,
+                  fixed_header = TRUE,
+                  page_length = 20) {
+  # check that `df` is indeed a dataframe
+  if (!("data.frame" %in% class(df))) {
+    print("ERROR: df is not a data frame")
+    return(NULL)
+  }
   # Build column names string for display
   # Substitute "_" with spaces to allow long column names to return to new lines
   newcolnames <- colnames(df)
@@ -100,15 +109,14 @@ df2dt <- function(df,
   cat("\n")
   # Get column index to truncate for DT::datatable
   to_truncate_ix <- which(colnames(df) %in% to_truncate)
-  # Generate DT table
-  dtobj <- DT::datatable(df,
-    colnames = newcolnames,
-    filter = filter,
-    options = list(
-      pageLength = 20,
-      filter = "top",
-      autoWidth = TRUE,
-      columnDefs = list(list(
+  # Options
+  options <- list(
+    pageLength = page_length,
+    filter = "top",
+    autoWidth = TRUE,
+    columnDefs = list(
+      # Truncate too long character columns
+      list(
         targets = to_truncate_ix,
         render = DT::JS(
           "function(data, type, row, meta) {",
@@ -121,8 +129,21 @@ df2dt <- function(df,
           "'...</span>' : data;",
           "}"
         )
-      ))
+      )
     )
+  )
+  # Extensions: fixed header
+  extensions <- NULL
+  if (fixed_header) {
+    extensions <- "FixedHeader"
+    options$fixedHeader <- TRUE
+  }
+  # Generate DT table
+  dtobj <- DT::datatable(df,
+    colnames = newcolnames,
+    filter = filter,
+    extensions = extensions,
+    options = options
   )
   # Round number columns
   dtobj <- dtobj %>% DT::formatRound(to_round, to_round_digits)
